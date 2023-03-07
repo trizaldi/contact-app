@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Repositories\CompanyRepository;
 use Illuminate\Http\Request;
+use App\Models\Contact;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ContactController extends Controller
 {
@@ -25,7 +27,18 @@ class ContactController extends Controller
     {
         //$companies = $company->pluck();
         $companies = $this->company->pluck();
-        $contacts = $this->getContacts();
+        //$contacts = $this->getContacts();
+        //$contacts = Contact::latest()->get();
+        // $contacts = Contact::latest()->paginate(10);
+        $contactsCollection = Contact::latest()->get();
+        $perPage = 10;
+        $currentPage = request()->query('page', 1);
+        $items = $contactsCollection->slice(($currentPage * $perPage) - $perPage, $perPage);
+        $total = $contactsCollection->count();
+        $contacts = new LengthAwarePaginator($items, $total, $perPage, $currentPage, [
+            'path' => request()->url(),
+            'query' => request()->query()
+        ]);
         return view('contacts.index', compact('contacts', 'companies'));
     }
 
@@ -37,9 +50,10 @@ class ContactController extends Controller
     //public function show(Request $request, $id)
     public function show($id)
     {
-        $contacts = $this->getContacts();
+       /* $contacts = $this->getContacts();
         abort_unless(isset($contacts[$id]), 404);
-        $contact = $contacts[$id];
+        $contact = $contacts[$id];*/
+        $contact = Contact::findOrFail($id);
         return view('contacts.show')->with('contact', $contact);
     }
 
